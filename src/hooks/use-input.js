@@ -1,28 +1,50 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
+
+const initialInputState = {
+  value: '',
+  isTouched: false,
+};
+
+// useReducer args: previous state snapshot & action
+const inputStateReducer = (state, action) => {
+  if (action.type === 'INPUT') {
+    return { value: action.value, isTouched: state.isTouched };
+  }
+  if (action.type === 'BLUR') {
+    return { value: state.value, isTouched: true };
+  }
+  if (action.type === 'RESET') {
+    return { value: '', isTouched: false };
+  }
+
+  return initialInputState;
+};
 
 // We want this hook to be generic - not limited to one specific input
 export default function useInput(validateValue) {
-  const [enteredValue, setEnteredVaue] = useState('');
-  const [isTouched, setIsTouched] = useState(false);
+  // useReducer returns an array with two elements
+  // first element: state managed by reducer
+  // second element: dispatch function
+  const [inputState, dispatch] = useReducer(inputStateReducer, initialInputState);
 
-  const valueIsValid = validateValue(enteredValue);
-  const hasError = !valueIsValid && isTouched;
+  const valueIsValid = validateValue(inputState.value);
+  const hasError = !valueIsValid && inputState.isTouched;
 
   const valueChangeHandler = event => {
-    setEnteredVaue(event.target.value);
+    // action is often an object with a 'type' key and a payload
+    dispatch({ type: 'INPUT', value: event.target.value });
   };
 
   const inputBlurHandler = event => {
-    setIsTouched(true);
+    dispatch({ type: 'BLUR' });
   };
 
   const reset = () => {
-    setEnteredVaue('');
-    setIsTouched(false);
+    dispatch({ type: 'RESET' });
   };
 
   return {
-    value: enteredValue,
+    value: inputState.value,
     isValid: valueIsValid,
     hasError,
     valueChangeHandler,
